@@ -159,31 +159,31 @@
         <p>
           数字だけだと実感が湧かないと思うので、実物を貼ります。調整に使っていない抜き打ちスイートの依頼文
           「鎖付きの槍を操る騎兵ユニットを作ってください。騎乗感、長柄武器、鎖で距離を支配する動きを見せてください。」に対して、
-          軽量モデル(flash)が<b>初回一発で</b>出したコードです(無修正の抜粋)。
+          軽量モデル(flash)が<b>初回一発で</b>出したコードです(本体は無修正の抜粋。グレーの注釈だけ、読みやすいように説明用として足してあります)。
         </p>
         <div class="code-window">
-          <div class="code-toolbar"><span class="code-badge">script.ts</span><span>flash が初回一発で生成(無修正・抜粋)</span></div>
+          <div class="code-toolbar"><span class="code-badge">script.ts</span><span>flash が初回一発で生成(本体は無修正・抜粋。グレー注釈のみ説明用)</span></div>
           <pre><code><span class="tok-kw">export const</span> unitScript: UnitScriptV1 = {
   version: <span class="tok-num">1</span>,
-  init: () =&gt; [
-    commands.equip(<span class="tok-str">'chain_snare_tool'</span>),
-    commands.equip(<span class="tok-str">'rider_lance_polearm'</span>),
-    commands.mount(<span class="tok-str">'void_horse'</span>)
+  init: () =&gt; [                    <span class="tok-cm">// 出撃時の指示書</span>
+    commands.equip(<span class="tok-str">'chain_snare_tool'</span>),    <span class="tok-cm">// 鎖(台帳の実在ID)</span>
+    commands.equip(<span class="tok-str">'rider_lance_polearm'</span>), <span class="tok-cm">// 槍</span>
+    commands.mount(<span class="tok-str">'void_horse'</span>)           <span class="tok-cm">// 騎乗</span>
   ],
   <span class="tok-cm">// …move / turn / basicAttack 略…</span>
-  skill1: (ctx: ActionContext) =&gt; {
-    <span class="tok-kw">if</span> (!ctx.cooldowns.ready(<span class="tok-str">'skill1'</span>)) <span class="tok-kw">return</span> [];
+  skill1: (ctx: ActionContext) =&gt; { <span class="tok-cm">// スキル1の指示書</span>
+    <span class="tok-kw">if</span> (!ctx.cooldowns.ready(<span class="tok-str">'skill1'</span>)) <span class="tok-kw">return</span> []; <span class="tok-cm">// まだ使えないなら何もしない</span>
     <span class="tok-kw">const</span> output: Command[] = [
-      ctx.commands.areaSlow({
-        center: ctx.intent.targetPosition ?? ctx.self.position,
-        radius: <span class="tok-num">4</span>,
-        slowRatio: <span class="tok-num">0.5</span>,
-        duration: <span class="tok-num">2</span>,
-        vfx: <span class="tok-str">'chain_tether_spark'</span>
+      ctx.commands.areaSlow({      <span class="tok-cm">// 命令カード①: 範囲減速</span>
+        center: ctx.intent.targetPosition ?? ctx.self.position, <span class="tok-cm">// 対象地点</span>
+        radius: <span class="tok-num">4</span>,                 <span class="tok-cm">// 効果範囲</span>
+        slowRatio: <span class="tok-num">0.5</span>,            <span class="tok-cm">// 50% 減速</span>
+        duration: <span class="tok-num">2</span>,               <span class="tok-cm">// 2秒間</span>
+        vfx: <span class="tok-str">'chain_tether_spark'</span>  <span class="tok-cm">// 鎖の火花(台帳の実在ID)</span>
       }),
-      ctx.commands.startCooldown(<span class="tok-str">'skill1'</span>, <span class="tok-num">7</span>)
+      ctx.commands.startCooldown(<span class="tok-str">'skill1'</span>, <span class="tok-num">7</span>) <span class="tok-cm">// 命令カード②: 7秒の再使用待ち</span>
     ];
-    <span class="tok-kw">return</span> output;
+    <span class="tok-kw">return</span> output;                 <span class="tok-cm">// カード2枚を返して終わり</span>
   },
   <span class="tok-cm">// …skill2 / onHit / onKnockdown / onDeath 略…</span>
 };</code></pre>
@@ -207,6 +207,13 @@
           <li><code>tests.generated.ts</code> — 生成物自身の形状テスト</li>
           <li><code>brief.ja.md</code> — 日本語の設計解説</li>
         </ul>
+        <p>
+          そしてこの5ファイル構成は、どのユニットでも<b>完全に同じ</b>です。データフォルダには実 API で生成された
+          1,534 ラン分が同じ形で並んでいて、どれを開いても同じ場所に同じ様式のファイルがあります。
+          定型コードを何十体ぶんも書き続ける仕事は人間には苦行ですが、<b>LLM にとって定型文の量産は一番の得意分野</b>で、
+          原型箱はその得意を安全に引き出す装置です。形が揃っているから、10体でも100体でも
+          検査・比較・修正の手順は1体のときと変わりません — <b>量産で増えるのは体数だけで、工程は増えない</b>。
+        </p>
         <p>
           対戦後には <code>balance-report</code> が付きます。このユニットなら平均 DPS 198.6、平均生存 17.0 秒
           — <b>「なんか強そう」ではなく数値で残る</b>ので、バランス調整の入力にそのまま使えます。

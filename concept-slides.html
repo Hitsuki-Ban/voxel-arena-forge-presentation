@@ -350,27 +350,27 @@
     <div>
       <pre class="code" data-lang="ts">export const unitScript: UnitScriptV1 = {
   version: 1,
-  init: () => [
-    commands.equip('chain_snare_tool'),
-    commands.equip('rider_lance_polearm'),
-    commands.mount('void_horse')
+  init: () => [                    // 出撃時の指示書
+    commands.equip('chain_snare_tool'),    // 鎖(台帳の実在ID)
+    commands.equip('rider_lance_polearm'), // 槍
+    commands.mount('void_horse')           // 騎乗
   ],
   <span class="dim">…(move / turn / basicAttack 略)…</span>
-  skill1: (ctx: ActionContext) => {
-    if (!ctx.cooldowns.ready('skill1')) return [];
+  skill1: (ctx: ActionContext) => { // スキル1の指示書
+    if (!ctx.cooldowns.ready('skill1')) return []; // まだ使えないなら何もしない
     const output: Command[] = [
-      ctx.commands.areaSlow({
-        center: ctx.intent.targetPosition ?? ctx.self.position,
-        radius: 4,
-        slowRatio: 0.5,
-        duration: 2,
-        vfx: 'chain_tether_spark'
+      ctx.commands.areaSlow({      // 命令カード①: 範囲減速
+        center: ctx.intent.targetPosition ?? ctx.self.position, // 対象地点
+        radius: 4,                 // 効果範囲
+        slowRatio: 0.5,            // 50% 減速
+        duration: 2,               // 2秒間
+        vfx: 'chain_tether_spark'  // 鎖の火花(台帳の実在ID)
       }),
-      ctx.commands.startCooldown('skill1', 7)
+      ctx.commands.startCooldown('skill1', 7) // 命令カード②: 7秒の再使用待ち
     ];
-    return output;
+    return output;                 // カード2枚を返して終わり
   },</pre>
-      <p class="muted" style="font-size:.95rem;margin-top:.6rem">スライド3の依頼文に対して、軽量モデル(flash)が<b>初回一発</b>で出したコードの抜粋(無修正)</p>
+      <p class="muted" style="font-size:.95rem;margin-top:.6rem">スライド3の依頼文に対して、軽量モデル(flash)が<b>初回一発</b>で出したコードの抜粋。<b>コード本体は無修正</b>(グレーの注釈のみ説明用に追記)</p>
     </div>
     <div>
       <ul class="apis">
@@ -380,7 +380,8 @@
         <li><b>tests.generated.ts</b> — 形状テスト(構造の自己検証)</li>
         <li><b>brief.ja.md</b> — 日本語の設計解説</li>
       </ul>
-      <p style="margin-top:1.2rem">注目してほしいのは賢さではなく<b>語彙の狭さ</b>。決められたコマンドと実在 ID しか書けない形に誘導している</p>
+      <p style="margin-top:1rem">この5ファイル構成は<b>毎回同じ</b>。実 API で生成した<b>1,534 ラン全部が同じ形</b>で並ぶので、量産しても検査・比較・修正の手順は1体のときと変わらない</p>
+      <p style="margin-top:.8rem">注目してほしいのは賢さではなく<b>語彙の狭さ</b>。決められたコマンドと実在 ID しか書けない形に誘導している</p>
       <p style="margin-top:.8rem">この様式は<b>人にもそのまま読める</b>。生成が理想形でなくても、数字(範囲・時間・クールダウン)だけ直せる<b>叩き台</b>が毎回同じ形で手に入り、<b>直した結果も同じ検査を通る</b></p>
       <p class="muted" style="font-size:.95rem;margin-top:.8rem">読み方(前スライド): <code>skill1</code>=スキルの指示書、<code>ready('skill1')</code>=「もう使える?」、<code>return [...]</code>=返す命令カードの束</p>
     </div>
@@ -433,7 +434,7 @@
     <tr><th>素材カタログ(43点)</th><td class="arrow">⇔</td><td>アセット管理台帳。<b>実在する ID しか参照できない</b></td></tr>
     <tr><th>参照ドキュメント(6本)</th><td class="arrow">⇔</td><td>通った実例1本+レビューで弾いた理由の記録(失敗パターン集)</td></tr>
   </table>
-  <p class="subtitle">新規開発というより、<b>すでにある資産を「LLM が読める契約」に固め直す</b>作業が中心だった</p>
+  <p class="subtitle">新規開発というより、<b>すでにある資産を「LLM が読める契約」に固め直す</b>作業が中心だった。コード生成を、LLM が一番得意な仕事 — <b>定型文の穴埋め</b> — に変換する装置とも言える</p>
 </section>
 
 <!-- 12. 部品箱の中身 -->
@@ -443,17 +444,17 @@
     <div>
       <p style="margin-bottom:.7rem"><b>できること</b> = Command 型(抜粋。全16種):</p>
       <pre class="code" data-lang="ts">export type Command =
-  | { type: 'meleeArc'; damage: number;
-      radius: number; angle: number;
-      damageType: DamageType; … }
-  | { type: 'areaSlow'; center: Vec2;
-      radius: number; slowRatio: number;
-      duration: number; vfx?: string }
-  | { type: 'applyStatus';
+  | { type: 'meleeArc';        // 近接の扇形攻撃
+      damage: number; radius: number;
+      angle: number; damageType: DamageType; … }
+  | { type: 'areaSlow';        // 範囲減速
+      center: Vec2; radius: number;
+      slowRatio: number; duration: number; vfx?: string }
+  | { type: 'applyStatus';     // 状態異常の付与
       targetUnitId: string;
       status: StatusId; duration: number; … }
-  <span class="dim">| …equip / mount / moveToward /
-    areaDamage / playAttributeVfx など</span></pre>
+  <span class="dim">| …equip(装備) / mount(騎乗) / moveToward(移動) /
+    areaDamage(範囲攻撃) / playAttributeVfx(属性演出) など</span></pre>
     </div>
     <div>
       <p style="margin-bottom:.7rem"><b>見えるもの</b> = ActionContext 型(全部):</p>
