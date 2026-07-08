@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>軽量LLMに、ゲームコンテンツを量産させる — VoxelArenaForge 実証</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --border: #2d333b;
+    --text: #e6edf3;
+    --muted: #9da7b3;
+    --accent: #4da3ff;
+    --accent2: #f0a24b;
+    --good: #57c98a;
+    --bad: #f47067;
+    --tok-kw: #ff7b72;
+    --tok-str: #a5d6ff;
+    --tok-num: #f0a24b;
+    --tok-prop: #7ee787;
+    --tok-cm: #8b949e;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic UI", "Noto Sans JP", "Meiryo", sans-serif;
+    overflow: hidden;
+  }
+  .deck { height: 100vh; overflow-y: auto; scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+  section.slide {
+    height: 100vh;
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 6vh 8vw;
+    position: relative;
+  }
+  .kicker {
+    color: var(--accent);
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    margin-bottom: 1rem;
+  }
+  h1 { font-size: 3.1rem; line-height: 1.25; font-weight: 800; }
+  h2 { font-size: 2.1rem; line-height: 1.3; font-weight: 800; margin-bottom: 2rem; }
+  h2 .lesson { color: var(--accent2); margin-right: .6em; }
+  .subtitle { font-size: 1.35rem; color: var(--muted); margin-top: 1.6rem; line-height: 1.7; }
+  p, li { font-size: 1.22rem; line-height: 1.8; }
+  ul.points { list-style: none; display: flex; flex-direction: column; gap: 1.05rem; }
+  ul.points li { padding-left: 1.6em; position: relative; }
+  ul.points li::before { content: "▸"; color: var(--accent); position: absolute; left: 0; }
+  .muted { color: var(--muted); }
+  .accent { color: var(--accent); }
+  .conclusion { display: flex; flex-direction: column; gap: 1.4rem; }
+  .conclusion .item {
+    background: var(--panel); border: 1px solid var(--border); border-left: 4px solid var(--accent);
+    border-radius: 0 12px 12px 0; padding: 1.4rem 1.8rem;
+  }
+  .conclusion .item p { font-size: 1.45rem; line-height: 1.7; }
+  .cols { display: flex; gap: 2.6rem; align-items: center; }
+  .cols > * { flex: 1; min-width: 0; }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.3rem 1.5rem;
+  }
+  table.map { width: 100%; border-collapse: collapse; margin-top: .4rem; }
+  table.map th, table.map td {
+    text-align: left; padding: .75rem 1rem; font-size: 1.1rem; line-height: 1.6;
+    border-bottom: 1px solid var(--border);
+  }
+  table.map th { color: var(--accent); font-weight: 700; white-space: nowrap; }
+  table.map td.arrow { color: var(--muted); white-space: nowrap; }
+  .flow { display: flex; align-items: stretch; gap: .6rem; margin: 1.2rem 0 2rem; flex-wrap: wrap; }
+  .flow .step {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.1rem;
+    flex: 1;
+    min-width: 9.5rem;
+    text-align: center;
+  }
+  .flow .step b { display: block; font-size: 1.05rem; margin-bottom: .35rem; color: var(--accent); }
+  .flow .step span { font-size: .92rem; color: var(--muted); line-height: 1.5; display: block; }
+  .flow .arrow { align-self: center; color: var(--muted); font-size: 1.4rem; }
+  .stepno {
+    display: inline-block; background: var(--accent); color: #08121f; font-weight: 800;
+    border-radius: 8px; padding: .05em .55em; margin-right: .5em; font-size: .8em; vertical-align: .1em;
+  }
+  img.shot, video.shot {
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    display: block;
+  }
+  .cropzoom {
+    overflow: hidden;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    aspect-ratio: 16 / 10;
+  }
+  .cropzoom video, .cropzoom img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    transform: scale(1.55);
+    transform-origin: 50% 44%;
+    display: block;
+  }
+  figcaption { color: var(--muted); font-size: .95rem; margin-top: .6rem; }
+  .gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; margin-top: .5rem; }
+  .gallery figure { margin: 0; }
+  .gallery img {
+    width: 100%; aspect-ratio: 16 / 8; object-fit: cover; object-position: center 62%;
+    border-radius: 10px; border: 1px solid var(--border); display: block;
+  }
+  .gallery figcaption b { color: var(--text); }
+  .demo-banner {
+    border: 2px solid var(--accent2);
+    border-radius: 14px;
+    padding: 2rem 2.4rem;
+    background: rgba(240, 162, 75, .06);
+  }
+  .demo-banner h2 { color: var(--accent2); margin-bottom: 1.2rem; }
+  .question {
+    background: var(--panel); border-left: 4px solid var(--accent2);
+    border-radius: 0 10px 10px 0; padding: 1.2rem 1.6rem; margin-bottom: 1.2rem;
+  }
+  .question p { font-size: 1.35rem; }
+  code {
+    font-family: Consolas, "Cascadia Code", monospace;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: .12em .45em;
+    font-size: .92em;
+  }
+  pre.code {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.2rem;
+    font-family: Consolas, "Cascadia Code", monospace;
+    font-size: .84rem;
+    line-height: 1.55;
+    overflow-x: auto;
+    margin: 0;
+  }
+  pre.code .dim, .tok-cm { color: var(--tok-cm); }
+  .tok-kw { color: var(--tok-kw); }
+  .tok-str { color: var(--tok-str); }
+  .tok-num { color: var(--tok-num); }
+  .tok-fn { color: var(--tok-prop); }
+  pre.code.fail { border-left: 4px solid var(--bad); }
+  pre.code.pass { border-left: 4px solid var(--good); }
+  .verdict { font-weight: 800; font-size: 1rem; margin-bottom: .5rem; }
+  .verdict.bad { color: var(--bad); }
+  .verdict.good { color: var(--good); }
+  ul.apis { list-style: none; display: flex; flex-direction: column; gap: .7rem; }
+  ul.apis li { font-size: 1.06rem; line-height: 1.7; }
+  ul.apis li b { color: var(--accent); font-weight: 700; }
+  ul.apis li code { font-size: .85em; }
+  .pager {
+    position: fixed; right: 1.2rem; bottom: 1rem;
+    color: var(--muted); font-size: .9rem;
+    background: rgba(13, 17, 23, .75);
+    padding: .3rem .7rem; border-radius: 8px; border: 1px solid var(--border);
+    z-index: 10;
+  }
+  .hint { position: fixed; left: 1.2rem; bottom: 1rem; color: var(--muted); font-size: .85rem; z-index: 10; }
+  @media (max-width: 900px) {
+    h1 { font-size: 2.2rem; } h2 { font-size: 1.6rem; }
+    .cols { flex-direction: column; }
+    .gallery { grid-template-columns: 1fr 1fr; }
+    section.slide { padding: 5vh 6vw; }
+  }
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+<!-- 1. タイトル -->
+<section class="slide">
+  <div class="kicker">ゲーム開発 × LLM 運用の実証</div>
+  <h1>軽量LLMに、<br>コンテンツを量産させる</h1>
+  <p class="subtitle">
+    日本語の一文から「検証済みの動くゲームユニット」を作る実験機
+    <b>VoxelArenaForge</b> でわかった、<br>
+    安いモデルを現場で回すための作り方の話
+  </p>
+</section>
+
+<!-- 2. 結論から -->
+<section class="slide">
+  <h2>先に結論</h2>
+  <div class="conclusion">
+    <div class="item"><p><b>① 高価なモデルは必須ではない。</b>「型」と「自動検査」を作り込めば、
+      軽量モデル<b>だけ</b>の構成でも量産が回る(型の成熟前 25% → 現在 10/10)</p></div>
+    <div class="item"><p><b>② 品質保証は人手レビューではなく、仕組みで担保できる。</b>
+      検査を通らない生成物は一切ゲームに入らない。だから安いモデルの実験がノーリスクになる</p></div>
+    <div class="item"><p><b>③ 原料は既存資産で足りる。</b>
+      仕様書のテンプレート・マスタデータ定義・アセット台帳 — これを LLM が読める「型」に固め直す作業が本体だった</p></div>
+  </div>
+</section>
+
+<!-- 3. 題材 -->
+<section class="slide">
+  <h2>実証の題材: VoxelArenaForge</h2>
+  <ul class="points">
+    <li>「<b>鎖付きの槍を操る騎兵ユニットを作ってください。騎乗感、長柄武器、鎖で距離を支配する動きを見せてください。</b>」— 入力はこの日本語だけ(実測バッチで使った実際の依頼文)</li>
+    <li>AI が対話で仕様を固め、<b>行動スクリプト・3D モデル構成・テスト</b>を自動生成</li>
+    <li>生成物は自動検査と<b>対戦シミュレーション</b>を通ってはじめて登録される — 完成の定義は「検証を通ること」</li>
+  </ul>
+  <p class="subtitle">題材はオートバトルのユニット制作。狙いは「<b>LLM 生成物を安全に量産ラインに乗せる方法</b>」の実証</p>
+</section>
+
+<!-- 4. 成果ファースト -->
+<section class="slide">
+  <h2>まず、できあがるもの</h2>
+  <div class="cols">
+    <figure>
+      <video class="shot" src="assets/captures/showcase-storm-lancer-phalanx/showcase-storm-lancer-phalanx.mp4"
+             poster="assets/captures/showcase-storm-lancer-phalanx/showcase-storm-lancer-phalanx.png"
+             autoplay muted loop playsinline></video>
+      <figcaption>「雷槍の突撃」— 生成された騎兵隊が槍盾隊へ向かう場面(実生成リプレイ・展示用カメラ)</figcaption>
+    </figure>
+    <div>
+      <p style="margin-bottom:.8rem"><b>画面で起きていること:</b></p>
+      <ul class="points">
+        <li>一体一体が<b>ボクセル製ユニット</b>(体・兜・武器・騎乗)。足元の板が<b>チーム色</b>(青=自軍/赤=敵軍)</li>
+        <li>上部は<b>生存数スコアボード</b>、閃光は<b>属性 VFX</b>(雷)。決着時には勝敗バナーが出ます</li>
+        <li>動き・攻撃・勝敗はすべて<b>決定論シミュレーションの記録の再生</b> — 同じ条件なら同じ結果</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 5. ベスト盤ギャラリー -->
+<section class="slide">
+  <h2>生成ユニットの多様性(ベスト盤)</h2>
+  <div class="gallery">
+    <figure>
+      <img src="assets/captures/showcase-storm-lancer-phalanx/showcase-storm-lancer-phalanx.png" alt="雷槍の突撃">
+      <figcaption><b>雷槍の突撃</b> — 騎乗突撃・雷属性</figcaption>
+    </figure>
+    <figure>
+      <img src="assets/captures/showcase-phoenix-mushroom-support/showcase-phoenix-mushroom-support.png" alt="不死鳥砲撃と胞子支援">
+      <figcaption><b>不死鳥砲撃と胞子支援</b> — 砲撃×毒×支援</figcaption>
+    </figure>
+    <figure>
+      <img src="assets/captures/showcase-clockwork-void-control/showcase-clockwork-void-control.png" alt="からくり制御と虚無の罠">
+      <figcaption><b>からくり制御と虚無の罠</b> — 妨害の応酬</figcaption>
+    </figure>
+    <figure>
+      <img src="assets/captures/showcase-crystal-harpoon-duel/showcase-crystal-harpoon-duel.png" alt="水晶決闘者と潮の狩人">
+      <figcaption><b>水晶決闘者と潮の狩人</b> — 単体決闘</figcaption>
+    </figure>
+    <figure>
+      <img src="assets/captures/showcase-sandworm-rooted-boss/showcase-sandworm-rooted-boss.png" alt="砂ワーム騎兵と古木の番人">
+      <figcaption><b>砂ワーム騎兵と古木の番人</b> — ボス風シルエット</figcaption>
+    </figure>
+  </div>
+  <p class="subtitle" style="margin-top:1.2rem">実 API で生成された 1,534 ランからの選抜。すべて検証済みで、その場でリプレイ再生できる</p>
+</section>
+
+<!-- 6. 仕組み -->
+<section class="slide">
+  <h2>仕組み(全体像)</h2>
+  <div class="flow">
+    <div class="step"><b>ユーザー</b><span>作りたいユニットを日本語で説明</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>仕様相談 AI</b><span>質問と提案で仕様を確定(SpecAgent)</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>実装 AI</b><span>行動スクリプト+モデル構成を生成(CodeAgent)</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>自動検査</b><span>静的検証・テスト・アセット照合</span></div>
+    <div class="arrow">→</div>
+    <div class="step"><b>シミュレーション</b><span>決定論対戦 → リプレイ+バランス評価</span></div>
+  </div>
+  <ul class="points">
+    <li>ここからこの流れを<b>3つの工程</b>に分けて、実物で見ていきます</li>
+    <li>全工程がモック実行でも再現可能(API なしで動くデモも用意)。途中の成果物はすべて<b>構造化データとして保存</b></li>
+  </ul>
+</section>
+
+<!-- 7. 過程① 相談 -->
+<section class="slide">
+  <h2><span class="stepno">工程 1</span>相談 — 質問と候補カードで仕様を固める</h2>
+  <div class="cols">
+    <figure>
+      <img class="shot" src="assets/videos/workbench-flow/stills/flow-02-choice-cards.png" alt="ユニット工房の候補カードUI(字幕とハイライト付き)">
+      <figcaption>ユニット工房の実画面: 依頼文に対して質問+3案のカード</figcaption>
+    </figure>
+    <div>
+      <ul class="points">
+        <li>あいまいな依頼には<b>質問</b>を返す。勝手に進まない(質問ゲート)</li>
+        <li>迷う場面では<b>「おすすめ/攻めた案/変化球」の3案</b>を、見返り・リスク付きのカードで提示 — 人は選ぶだけ</li>
+        <li>確定した仕様は右側の<b>仕様シート</b>(構造化データ)に固まっていく。この対話は<b>軽量モデルで成立</b></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 生成物のかたち(コードを見せる前の導入) -->
+<section class="slide">
+  <h2>ユニットのかたち — 「頭脳」と「技の中身」の2層</h2>
+  <div class="cols" style="align-items:flex-start">
+    <div>
+      <p style="margin-bottom:.8rem">ユニットの動きは2層でできています。<b>生成するのは下の層だけ</b>です:</p>
+      <table class="map">
+        <tr>
+          <th>ユニット AI(頭脳)</th>
+          <td><b>いつ動く・誰を狙う・どの行動を出すか</b>を毎瞬決める。<br>
+          <span class="muted">7種の既製テンプレートから選ぶだけ — <b>生成しない</b>(例: Kiter=距離を取って撃つ)</span></td>
+        </tr>
+        <tr>
+          <th>行動の指示書(生成物)</th>
+          <td>AI が「今スキル1」と決めた瞬間に呼ばれ、<b>その技が具体的に何をするか</b>を返す。<br>
+          <span class="muted">LLM が生成するのはこの指示書10枚 — 出撃時・移動・通常/強攻撃・スキル×2・被弾・転倒・死亡</span></td>
+        </tr>
+      </table>
+      <p class="subtitle" style="margin-top:1rem">戦い方の頭脳は検証済みの既製品。<b>生成の自由度は「技の中身」に限定</b>されるので、棒立ちや迷走が構造的に起きない</p>
+    </div>
+    <div>
+      <p style="margin-bottom:.8rem"><b>指示書のやることは1つだけ:</b></p>
+      <ul class="points">
+        <li><b>状況メモ(ctx)を見る</b> — 自分の位置とHP割合、AI が決めた攻撃対象、スキルが使えるか</li>
+        <li><b>命令カード(16種)から数枚選んで返す</b> — 「範囲減速」「クールダウン開始」など</li>
+        <li>実際に世界を動かすのは<b>シミュレーター側</b>。指示書は命令を返すだけで、直接は何もできない</li>
+      </ul>
+      <p class="subtitle" style="margin-top:1.2rem">
+        次のスライドのコードは、この読み方だけで追えます:<br>
+        「<code>skill1: …</code> = スキルを使うときの指示書」「<code>return [...]</code> = 返す命令カードの束」
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- 8. 過程② 生成 -->
+<section class="slide">
+  <h2><span class="stepno">工程 2</span>生成 — 1回でファイル一式が出てくる</h2>
+  <div class="cols" style="align-items:flex-start">
+    <div>
+      <pre class="code" data-lang="ts">export const unitScript: UnitScriptV1 = {
+  version: 1,
+  init: () => [
+    commands.equip('chain_snare_tool'),
+    commands.equip('rider_lance_polearm'),
+    commands.mount('void_horse')
+  ],
+  <span class="dim">…(move / turn / basicAttack 略)…</span>
+  skill1: (ctx: ActionContext) => {
+    if (!ctx.cooldowns.ready('skill1')) return [];
+    const output: Command[] = [
+      ctx.commands.areaSlow({
+        center: ctx.intent.targetPosition ?? ctx.self.position,
+        radius: 4,
+        slowRatio: 0.5,
+        duration: 2,
+        vfx: 'chain_tether_spark'
+      }),
+      ctx.commands.startCooldown('skill1', 7)
+    ];
+    return output;
+  },</pre>
+      <p class="muted" style="font-size:.95rem;margin-top:.6rem">スライド3の依頼文に対して、軽量モデル(flash)が<b>初回一発</b>で出したコードの抜粋(無修正)</p>
+    </div>
+    <div>
+      <ul class="apis">
+        <li><b>script.ts</b> — 行動スクリプト(左)。<code>equip / mount</code> の ID はすべて<b>アセット台帳の実在 ID</b></li>
+        <li><b>manifest.json</b> — アクション定義(射程・クールダウン・対象選択・効果範囲の予算)</li>
+        <li><b>composition.json</b> — ボクセルの見た目構成(体・槍・騎乗)</li>
+        <li><b>tests.generated.ts</b> — 形状テスト(構造の自己検証)</li>
+        <li><b>brief.ja.md</b> — 日本語の設計解説</li>
+      </ul>
+      <p style="margin-top:1.2rem">注目してほしいのは賢さではなく<b>語彙の狭さ</b>。決められたコマンドと実在 ID しか書けない形に誘導している</p>
+      <p class="muted" style="font-size:.95rem;margin-top:.8rem">読み方(前スライド): <code>init</code>=出撃時の指示書、<code>skill1</code>=スキルの指示書、<code>ready('skill1')</code>=「もう使える?」の確認、<code>return [...]</code>=返す命令カードの束</p>
+    </div>
+  </div>
+</section>
+
+<!-- 9. 過程③ 検証 -->
+<section class="slide">
+  <h2><span class="stepno">工程 3</span>検証 — 機械が弾き、機械が直させる(実録)</h2>
+  <div class="cols" style="align-items:flex-start">
+    <div>
+      <div class="verdict bad">✕ 1回目の生成 — 型検査が拒否(10.4秒)</div>
+      <pre class="code fail" data-lang="txt">script.ts(40,9): error TS2353:
+'damageType' does not exist in type
+'{ type: "imbueSelf"; attribute: ...;
+   duration: number; ... }'</pre>
+      <p class="muted" style="font-size:.95rem;margin-top:.6rem">flash が <code>imbueSelf</code> に存在しないプロパティを発明 → コンパイラが拒否</p>
+    </div>
+    <div>
+      <div class="verdict good">✓ 2回目の生成 — 合格(10.7秒)</div>
+      <pre class="code pass" data-lang="txt">エラー文をそのまま実装 AI に返送
+  → 修正版を再生成 → 全検査を通過
+  → 対戦シミュレーションへ</pre>
+      <p class="muted" style="font-size:.95rem;margin-top:.6rem">「水晶の決闘者」実測ログより。<b>人間は一切介在していない</b>。弾いた理由は失敗パターン集に蓄積され、次回から先回りされる</p>
+    </div>
+  </div>
+  <p class="subtitle" style="margin-top:1.6rem">通ったユニットはその場で対戦し、勝敗・与ダメ・生存時間が<b>数値とリプレイ</b>で残る</p>
+</section>
+
+<!-- 10. 実演 -->
+<section class="slide">
+  <div class="demo-banner">
+    <h2>実演(約10分)</h2>
+    <p style="margin-bottom:1.2rem">いま見た工程1〜3を、ライブで通します。注目ポイント:</p>
+    <ul class="points">
+      <li><b>① 人の仕事は「選ぶ」と「見極める」</b> — AI が質問し、候補カードで提案。人は方向を選ぶだけ</li>
+      <li><b>② 生成物はすべて証拠として残る</b> — スクリプト・アセット・検査結果が構造化データで保存される</li>
+      <li><b>③ 完成の定義が「検証を通ること」</b> — できたユニットはその場で対戦し、結果が数値になる</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 11. 要点① -->
+<section class="slide">
+  <h2><span class="lesson">運用の要点①</span>「原型箱」— 型を先に作る</h2>
+  <p style="margin-bottom:1rem">LLM に自由にコードを書かせない。<b>型に流し込ませる</b>。この実証で用意した型と、現場での対応物:</p>
+  <table class="map">
+    <tr><th>コマンド API(16種)</th><td class="arrow">⇔</td><td>社内のスキル・アクション定義。生成コードは<b>このメニューを返すことしかできない</b></td></tr>
+    <tr><th>データスキーマ(23本)</th><td class="arrow">⇔</td><td>マスタデータ定義。検証を通らないデータは次の工程に進めない</td></tr>
+    <tr><th>素材カタログ(43点)</th><td class="arrow">⇔</td><td>アセット管理台帳。<b>実在する ID しか参照できない</b></td></tr>
+    <tr><th>参照ドキュメント(6本)</th><td class="arrow">⇔</td><td>通った実例1本+レビューで弾いた理由の記録(失敗パターン集)</td></tr>
+  </table>
+  <p class="subtitle">新規開発というより、<b>すでにある資産を「LLM が読める契約」に固め直す</b>作業が中心だった</p>
+</section>
+
+<!-- 12. 部品箱の中身 -->
+<section class="slide">
+  <h2><span class="lesson">運用の要点①</span>部品箱の中身 — 実際の型定義</h2>
+  <div class="cols" style="align-items:flex-start">
+    <div>
+      <p style="margin-bottom:.7rem"><b>できること</b> = Command 型(抜粋。全16種):</p>
+      <pre class="code" data-lang="ts">export type Command =
+  | { type: 'meleeArc'; damage: number;
+      radius: number; angle: number;
+      damageType: DamageType; … }
+  | { type: 'areaSlow'; center: Vec2;
+      radius: number; slowRatio: number;
+      duration: number; vfx?: string }
+  | { type: 'applyStatus';
+      targetUnitId: string;
+      status: StatusId; duration: number; … }
+  <span class="dim">| …equip / mount / moveToward /
+    areaDamage / playAttributeVfx など</span></pre>
+    </div>
+    <div>
+      <p style="margin-bottom:.7rem"><b>見えるもの</b> = ActionContext 型(全部):</p>
+      <pre class="code" data-lang="ts">export interface ActionContext {
+  self: UnitSelfView;      <span class="dim">// 自分の位置とHP比率</span>
+  intent: ActionIntent;    <span class="dim">// 攻撃対象・目標地点</span>
+  commands: CommandFactory; <span class="dim">// 左の16種</span>
+  scalars: { attack: number;
+             moveSpeed: number };
+  cooldowns: { ready(id: string): boolean };
+  rng: { next(): number };  <span class="dim">// シード付き乱数</span>
+}</pre>
+      <p style="margin-top:1rem">敵の一覧も、HP の生値も、座標系の詳細も<b>渡さない</b>。語彙と視界を絞るほど、軽量モデルの合格率が上がった</p>
+    </div>
+  </div>
+</section>
+
+<!-- 13. 要点② -->
+<section class="slide">
+  <h2><span class="lesson">運用の要点②</span>自動の受け入れ検査 — 通らないものは入らない</h2>
+  <ul class="points">
+    <li><b>サンドボックス</b>: 生成コードはゲーム状態に触れない。コマンド列を返すだけ</li>
+    <li><b>静的検査</b>: 禁止 import・存在しないアセット参照・記述漏れを、実行前に機械が却下(工程3で見た実録)</li>
+    <li><b>決定論シミュレーション</b>: 同じ条件なら同じ結果。生成物の良し悪しを<b>再現可能な実験</b>として判定できる</li>
+    <li><b>失敗の資産化</b>: 弾いた理由は失敗パターン集に蓄積 → 次の生成プロンプトに自動反映</li>
+  </ul>
+  <p class="subtitle">人手レビューを増やすのではなく、<b>検査を仕組みにする</b>。これが安いモデルを使う前提条件</p>
+</section>
+
+<!-- 14. 要点③ -->
+<section class="slide">
+  <h2><span class="lesson">運用の要点③</span>モデルは役割で使い分ける</h2>
+  <table class="map">
+    <tr><th>仕様の対話</th><td class="arrow">→</td><td><b>軽量級(flash)で成立</b>。全構成で共通</td></tr>
+    <tr><th>コード生成(現在の型)</th><td class="arrow">→</td><td><b>軽量単独でも 10/10</b>。未見のお題でも同じ結果。中量級(pro)でも 10/10</td></tr>
+    <tr><th>同じ軽量モデル(初期の型)</th><td class="arrow">→</td><td><b>25%</b> — 差を作ったのはモデルではなく、<b>型と失敗パターン集の成熟</b></td></tr>
+  </table>
+  <ul class="points" style="margin-top:1.4rem">
+    <li>コストの実測: 受け入れ1体あたり<b>約1.4万トークン</b>(入力1.15万/出力0.25万)。<b>flash と pro でトークン量はほぼ同じ</b>なので、コスト差は単価差そのもの — 軽量化の削減がまるごと効く</li>
+    <li>検査が壊れた生成物を全部止めるので、<b>「どこまで安くできるか」の実験がノーリスク</b></li>
+    <li>初期に重量級へ切り替えても数字は動かなかった — <b>モデルの賢さは、型の不備を埋めない</b></li>
+  </ul>
+</section>
+
+<!-- 15. 情報の扱い -->
+<section class="slide">
+  <h2>情報の扱い(社内導入で先に整理する論点)</h2>
+  <ul class="points">
+    <li>外部 API に送るのは<b>プロンプト(仕様の相談内容+型の定義)だけ</b>。ソースコード全体やマスタデータ一式は送らない</li>
+    <li>接続先は OpenAI 互換 API で、<b>設定1つで差し替え可能</b> — <b>1.5B の小型オープンモデル+llama.cpp で、仕様相談〜生成〜検証の全工程を実機確認済み</b></li>
+    <li>生成・検査・評価の<b>証拠ファイルはすべて手元に残る</b> — 「AI が何をしたか」を後から全件監査できる</li>
+    <li>API なしのモック実行モードがあり、<b>ネットワーク遮断環境でもデモ・CI が回る</b></li>
+  </ul>
+</section>
+
+<!-- 16. どこから始めるか -->
+<section class="slide">
+  <h2>どこから始めるか</h2>
+  <p style="margin-bottom:1.4rem">「作らせて検証する」が向くのは、<b>出力がデータやスクリプトの形に落ちるコンテンツ</b>:</p>
+  <ul class="points">
+    <li>スキル・行動スクリプト、装備・敵などの<b>マスタデータ</b>、配置・エンカウント、バランス初期値</li>
+    <li>条件は3つ: <b>機械検証できる</b>/<b>失敗が安くて速い</b>/人の仕事を<b>仕様の対話とレビューに寄せられる</b></li>
+    <li>投資順序は「型 → 検査 → 軽量モデル」。<b>モデル選定は最後</b></li>
+  </ul>
+  <p class="subtitle">検証の土台(この実証での決定論シミュレーション)がない領域は、生成より先に土台づくりから</p>
+</section>
+
+<!-- 17. 議論のたたき台 -->
+<section class="slide">
+  <h2>議論のたたき台</h2>
+  <div class="question"><p>うちのタイトルで「<b>原型箱</b>」になり得る資産はどれか(仕様書テンプレート・マスタ定義・社内 API・アセット台帳)</p></div>
+  <div class="question"><p>「決定論シミュレーション」に当たる<b>検証の土台</b>は何か(自動テスト・リプレイ・バトルシミュレータ)</p></div>
+  <div class="question"><p>どの職種の仕事が「<b>選ぶ・見極める</b>」に変わるか。人のレビューはどこに残すべきか</p></div>
+</section>
+
+<!-- 18. まとめ -->
+<section class="slide">
+  <div class="kicker">MATOME</div>
+  <h2>まとめ</h2>
+  <ul class="points">
+    <li>投資先はモデルではなく<b>「原型箱」と「自動の受け入れ検査」</b> — 型が育てば軽量モデル単独でも量産が回る</li>
+    <li>検査が仕組みになっていれば、<b>安いモデルの実験はノーリスク</b> — どこまで安くできるかを数字で選べる</li>
+    <li>原料は既存資産(仕様書・マスタ定義・アセット台帳)。<b>始めるのは「型に固め直す」作業から</b></li>
+  </ul>
+  <p class="subtitle">
+    詳細は配布記事(全6本)で:体験編/原型箱編/やり取り方式編/受け入れ検査と計測編/エージェント開発記/展望編<br>
+    手元で試す:<code>pnpm install</code> → <code>pnpm demo:local:mock</code>(API 不要)<br>
+    <span class="muted" style="font-size:1.05rem">補足: この実験機自体も約3週間、ほぼ AI コーディングエージェントで開発(詳細は記事第5回)</span>
+  </p>
+</section>
+
+<!-- 19. 予備: 実演の録画版 -->
+<section class="slide">
+  <h2><span class="lesson">予備</span>実演の録画版(当日実演できない場合)</h2>
+  <div class="cols" style="align-items:flex-start">
+    <figure>
+      <video class="shot" src="assets/videos/workbench-flow/workbench-flow.mp4" controls muted playsinline preload="metadata"></video>
+      <figcaption><b>生成フローの通し録画(約110秒・ガイド付き)</b> — 依頼入力 → 質問と候補カード → 仕様確定 → 生成 → 対戦リプレイ再生まで。カーソル・工程字幕・注目箇所のハイライト付き。モック実行(API 不要)での収録</figcaption>
+    </figure>
+    <figure>
+      <video class="shot" src="assets/videos/battle/showcase-storm-lancer-phalanx/showcase-storm-lancer-phalanx.mp4" controls muted playsinline preload="metadata"></video>
+      <figcaption><b>戦闘の一部始終(約20秒・フル収録)</b> — 雷槍騎兵4体 vs 方陣衛士3体。VS バナー(両陣対峙で静止)→ 突撃 → 乱戦 → 撃破(灰色に倒れる)→ 自軍勝利バナー4秒保持。カメラは時間窓フレーミングで滑らかに追従</figcaption>
+    </figure>
+  </div>
+  <p class="subtitle">台詞は実演シナリオと同じものをそのまま使う(ランブック参照)</p>
+</section>
+
+</div>
+<div class="pager" id="pager">1 / 20</div>
+<div class="hint">←/→ または Space でページ送り</div>
+<script>
+  const deck = document.getElementById('deck');
+  const slides = Array.from(document.querySelectorAll('section.slide'));
+  const pager = document.getElementById('pager');
+  function currentIndex() {
+    return Math.round(deck.scrollTop / window.innerHeight);
+  }
+  function go(i) {
+    const idx = Math.max(0, Math.min(slides.length - 1, i));
+    slides[idx].scrollIntoView({ behavior: 'smooth' });
+  }
+  document.addEventListener('keydown', (e) => {
+    if (['ArrowRight', 'ArrowDown', ' ', 'PageDown'].includes(e.key)) { e.preventDefault(); go(currentIndex() + 1); }
+    if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); go(currentIndex() - 1); }
+    if (e.key === 'Home') { e.preventDefault(); go(0); }
+    if (e.key === 'End') { e.preventDefault(); go(slides.length - 1); }
+  });
+  deck.addEventListener('scroll', () => {
+    pager.textContent = `${currentIndex() + 1} / ${slides.length}`;
+  }, { passive: true });
+
+  // Minimal syntax highlighting for pre.code blocks (self-contained, no CDN).
+  const TOKEN_RE = /(\/\/[^\n]*)|('(?:[^'\\\n]|\\.)*')|(\b(?:export|const|import|from|type|interface|return|if|readonly|number|string|boolean|error)\b)|(\b\d+(?:\.\d+)?\b)|(\b[A-Za-z_$][\w$]*(?=\())/g;
+  function highlightTextNode(node) {
+    const text = node.nodeValue;
+    TOKEN_RE.lastIndex = 0;
+    if (!TOKEN_RE.test(text)) return;
+    TOKEN_RE.lastIndex = 0;
+    const frag = document.createDocumentFragment();
+    let last = 0, m;
+    while ((m = TOKEN_RE.exec(text)) !== null) {
+      if (m.index > last) frag.appendChild(document.createTextNode(text.slice(last, m.index)));
+      const cls = m[1] ? 'tok-cm' : m[2] ? 'tok-str' : m[3] ? 'tok-kw' : m[4] ? 'tok-num' : 'tok-fn';
+      const span = document.createElement('span');
+      span.className = cls;
+      span.textContent = m[0];
+      frag.appendChild(span);
+      last = m.index + m[0].length;
+    }
+    if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+    node.parentNode.replaceChild(frag, node);
+  }
+  document.querySelectorAll('pre.code').forEach((pre) => {
+    Array.from(pre.childNodes).forEach((n) => {
+      if (n.nodeType === Node.TEXT_NODE) highlightTextNode(n);
+    });
+  });
+</script>
+</body>
+</html>

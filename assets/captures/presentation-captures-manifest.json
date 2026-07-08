@@ -1,0 +1,293 @@
+{
+  "schemaVersion": "presentation-captures-manifest.v1",
+  "createdAt": "2026-07-07T19:00:09.381Z",
+  "deepSeekApiCalled": false,
+  "simulatorUrl": "http://127.0.0.1:4285/",
+  "outputDir": "F:\\WorkSpace\\VoxelArenaForge\\docs\\presentation\\assets\\captures",
+  "cameraMode": "showcase",
+  "captureMargin": 0.08,
+  "captureScale": 1,
+  "fps": 24,
+  "clipSeconds": 3,
+  "viewport": {
+    "width": 2560,
+    "height": 1440
+  },
+  "samples": [
+    {
+      "id": "showcase-storm-lancer-phalanx",
+      "labelJa": "【展示】雷槍の突撃",
+      "descriptionJa": "騎乗した雷槍が槍盾隊へ踏み込み、接敵前後の移動と攻撃が読みやすい一戦です。",
+      "simulatorReplayUrl": "http://127.0.0.1:4285/?sampleReplay=showcase-storm-lancer-phalanx&mode=embed&capture=1&camera=showcase&captureMargin=0.08&captureScale=1",
+      "cameraMode": "showcase",
+      "captureMargin": 0.08,
+      "captureScale": 1,
+      "bestFrame": {
+        "timeSeconds": 2.75,
+        "timelineRatio": 0.1786,
+        "renderedUnits": 7,
+        "renderedBoxParts": 140,
+        "renderedCueCount": 0,
+        "camera": {
+          "mode": "showcase",
+          "projection": "perspective",
+          "captureScale": "1.00",
+          "framingBounds": "-4.00,-2.80,4.10,2.80",
+          "viewBounds": "-4.80,-3.40,4.80,3.40",
+          "teamCoverage": "blue:1.00|red:1.00"
+        },
+        "teams": {
+          "separationDistance": 4.26,
+          "separationScore": 1.4494,
+          "overlapPenalty": 0
+        },
+        "canvas": {
+          "width": 2560,
+          "height": 1440,
+          "nonBackgroundPixels": 700212,
+          "nonBackgroundRatio": 0.1899,
+          "contentBounds": {
+            "width": 2560,
+            "height": 1440,
+            "widthRatio": 1,
+            "heightRatio": 1,
+            "areaRatio": 1
+          }
+        }
+      },
+      "frameCount": 72,
+      "fps": 24,
+      "clipSeconds": 3,
+      "still": {
+        "path": "showcase-storm-lancer-phalanx/showcase-storm-lancer-phalanx.png",
+        "sizeBytes": 126501,
+        "sha256": "3a616637537543fb0f7416de0cf7ab13bbe32a768985fe6c0351ea0e91612e3f"
+      },
+      "clip": {
+        "path": "showcase-storm-lancer-phalanx/showcase-storm-lancer-phalanx.mp4",
+        "sizeBytes": 1611757,
+        "sha256": "e70a698018dcd35efd49b720a67da3546addca44e72ac03a91a07bfd221aacf2"
+      }
+    },
+    {
+      "id": "showcase-phoenix-mushroom-support",
+      "labelJa": "【展示】不死鳥砲撃と胞子支援",
+      "descriptionJa": "火の砲撃、毒の胞子、支援系の状態変化が重なり、VFX の差が説明しやすいリプレイです。",
+      "simulatorReplayUrl": "http://127.0.0.1:4285/?sampleReplay=showcase-phoenix-mushroom-support&mode=embed&capture=1&camera=showcase&captureMargin=0.08&captureScale=1",
+      "cameraMode": "showcase",
+      "captureMargin": 0.08,
+      "captureScale": 1,
+      "bestFrame": {
+        "timeSeconds": 2.75,
+        "timelineRatio": 0.1004,
+        "renderedUnits": 8,
+        "renderedBoxParts": 108,
+        "renderedCueCount": 0,
+        "camera": {
+          "mode": "showcase",
+          "projection": "perspective",
+          "captureScale": "1.00",
+          "framingBounds": "-5.70,-4.00,4.10,4.00",
+          "viewBounds": "-6.60,-4.80,5.00,4.80",
+          "teamCoverage": "blue:1.00|red:1.00"
+        },
+        "teams": {
+          "separationDistance": 4.6206,
+          "separationScore": 1.3145,
+          "overlapPenalty": 0
+        },
+        "canvas": {
+          "width": 2560,
+          "height": 1440,
+          "nonBackgroundPixels": 423814,
+          "nonBackgroundRatio": 0.115,
+          "contentBounds": {
+            "width": 2560,
+            "height": 1401,
+            "widthRatio": 1,
+            "heightRatio": 0.9729,
+            "areaRatio": 0.9729
+          }
+        }
+      },
+      "frameCount": 72,
+      "fps": 24,
+      "clipSeconds": 3,
+      "still": {
+        "path": "showcase-phoenix-mushroom-support/showcase-phoenix-mushroom-support.png",
+        "sizeBytes": 121755,
+        "sha256": "eced1289fef8b28e169d982ed7ddb3b8176c6f19df96d77faf669e6bba71a2bf"
+      },
+      "clip": {
+        "path": "showcase-phoenix-mushroom-support/showcase-phoenix-mushroom-support.mp4",
+        "sizeBytes": 902772,
+        "sha256": "3d01ee9e2b259f623729c564a58431967de7de2694e5d6086cdc27ba8c31dadf"
+      }
+    },
+    {
+      "id": "showcase-clockwork-void-control",
+      "labelJa": "【展示】からくり制御と虚無の罠",
+      "descriptionJa": "制御役と罠役の応酬で、足止めや弱体の読み取りを短く見せられます。",
+      "simulatorReplayUrl": "http://127.0.0.1:4285/?sampleReplay=showcase-clockwork-void-control&mode=embed&capture=1&camera=showcase&captureMargin=0.08&captureScale=1",
+      "cameraMode": "showcase",
+      "captureMargin": 0.08,
+      "captureScale": 1,
+      "bestFrame": {
+        "timeSeconds": 3.15,
+        "timelineRatio": 0.115,
+        "renderedUnits": 8,
+        "renderedBoxParts": 148,
+        "renderedCueCount": 7,
+        "camera": {
+          "mode": "showcase",
+          "projection": "perspective",
+          "captureScale": "1.00",
+          "framingBounds": "-5.00,-3.30,4.10,3.30",
+          "viewBounds": "-5.80,-4.00,4.90,4.00",
+          "teamCoverage": "blue:1.00|red:1.00"
+        },
+        "teams": {
+          "separationDistance": 2.77,
+          "separationScore": 0.7673,
+          "overlapPenalty": 0.2327
+        },
+        "canvas": {
+          "width": 2560,
+          "height": 1440,
+          "nonBackgroundPixels": 671940,
+          "nonBackgroundRatio": 0.1823,
+          "contentBounds": {
+            "width": 2560,
+            "height": 1440,
+            "widthRatio": 1,
+            "heightRatio": 1,
+            "areaRatio": 1
+          }
+        }
+      },
+      "frameCount": 72,
+      "fps": 24,
+      "clipSeconds": 3,
+      "still": {
+        "path": "showcase-clockwork-void-control/showcase-clockwork-void-control.png",
+        "sizeBytes": 138588,
+        "sha256": "84813d5954cf07bfd1eef7bb5e4fa4a7736debb21075e46e0de8fb9fcd08f1f6"
+      },
+      "clip": {
+        "path": "showcase-clockwork-void-control/showcase-clockwork-void-control.mp4",
+        "sizeBytes": 1095026,
+        "sha256": "7acebaf0321c3b97210ff4512ea3c60c859d0398da7e4231bad0b195b5ce2451"
+      }
+    },
+    {
+      "id": "showcase-crystal-harpoon-duel",
+      "labelJa": "【展示】水晶決闘者と潮の狩人",
+      "descriptionJa": "水晶の近接圧と銛の間合い管理が対比され、単体戦の見せ場を作りやすい対戦です。",
+      "simulatorReplayUrl": "http://127.0.0.1:4285/?sampleReplay=showcase-crystal-harpoon-duel&mode=embed&capture=1&camera=showcase&captureMargin=0.08&captureScale=1",
+      "cameraMode": "showcase",
+      "captureMargin": 0.08,
+      "captureScale": 1,
+      "bestFrame": {
+        "timeSeconds": 3.15,
+        "timelineRatio": 0.2079,
+        "renderedUnits": 6,
+        "renderedBoxParts": 90,
+        "renderedCueCount": 6,
+        "camera": {
+          "mode": "showcase",
+          "projection": "perspective",
+          "captureScale": "1.00",
+          "framingBounds": "-4.00,-2.80,4.10,2.80",
+          "viewBounds": "-4.80,-3.40,4.80,3.40",
+          "teamCoverage": "blue:1.00|red:1.00"
+        },
+        "teams": {
+          "separationDistance": 3.275,
+          "separationScore": 1.5898,
+          "overlapPenalty": 0
+        },
+        "canvas": {
+          "width": 2560,
+          "height": 1440,
+          "nonBackgroundPixels": 573004,
+          "nonBackgroundRatio": 0.1554,
+          "contentBounds": {
+            "width": 2560,
+            "height": 1440,
+            "widthRatio": 1,
+            "heightRatio": 1,
+            "areaRatio": 1
+          }
+        }
+      },
+      "frameCount": 72,
+      "fps": 24,
+      "clipSeconds": 3,
+      "still": {
+        "path": "showcase-crystal-harpoon-duel/showcase-crystal-harpoon-duel.png",
+        "sizeBytes": 170209,
+        "sha256": "cfacc8e4302ce391fd95f0616f1ee93505453d2f826241a81fb1716005e0c940"
+      },
+      "clip": {
+        "path": "showcase-crystal-harpoon-duel/showcase-crystal-harpoon-duel.mp4",
+        "sizeBytes": 875898,
+        "sha256": "574f76e683ecc8054b5d56c07347408656eab4d3def7b7b90525b4d3e99337a4"
+      }
+    },
+    {
+      "id": "showcase-sandworm-rooted-boss",
+      "labelJa": "【展示】砂ワーム騎兵と古木の番人",
+      "descriptionJa": "騎乗ユニットの機動力と古木の重い前衛感が並び、シルエットの違いを紹介しやすい一戦です。",
+      "simulatorReplayUrl": "http://127.0.0.1:4285/?sampleReplay=showcase-sandworm-rooted-boss&mode=embed&capture=1&camera=showcase&captureMargin=0.08&captureScale=1",
+      "cameraMode": "showcase",
+      "captureMargin": 0.08,
+      "captureScale": 1,
+      "bestFrame": {
+        "timeSeconds": 2.75,
+        "timelineRatio": 0.1004,
+        "renderedUnits": 10,
+        "renderedBoxParts": 208,
+        "renderedCueCount": 0,
+        "camera": {
+          "mode": "showcase",
+          "projection": "perspective",
+          "captureScale": "1.00",
+          "framingBounds": "-6.00,-5.40,4.10,5.10",
+          "viewBounds": "-8.10,-6.40,6.10,6.10",
+          "teamCoverage": "blue:1.00|red:1.00"
+        },
+        "teams": {
+          "separationDistance": 4.14,
+          "separationScore": 0.889,
+          "overlapPenalty": 0.111
+        },
+        "canvas": {
+          "width": 2560,
+          "height": 1440,
+          "nonBackgroundPixels": 521349,
+          "nonBackgroundRatio": 0.1414,
+          "contentBounds": {
+            "width": 2560,
+            "height": 1300,
+            "widthRatio": 1,
+            "heightRatio": 0.9028,
+            "areaRatio": 0.9028
+          }
+        }
+      },
+      "frameCount": 72,
+      "fps": 24,
+      "clipSeconds": 3,
+      "still": {
+        "path": "showcase-sandworm-rooted-boss/showcase-sandworm-rooted-boss.png",
+        "sizeBytes": 119504,
+        "sha256": "0b369114100511c8fcd055e833940d651fd587108ea4f621dce6dad0885c6f24"
+      },
+      "clip": {
+        "path": "showcase-sandworm-rooted-boss/showcase-sandworm-rooted-boss.mp4",
+        "sizeBytes": 881573,
+        "sha256": "96bc395daaecf01c079a6af5946ac3ce54c0ea97370d4f8704b7d8c5126b8e61"
+      }
+    }
+  ]
+}

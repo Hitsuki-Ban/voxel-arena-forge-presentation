@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LLMに「作らせて、検証する」 — 配布記事シリーズ</title>
+  <link rel="stylesheet" href="article.css">
+</head>
+<body>
+  <main class="page">
+    <header>
+      <p class="meta">Voxel Arena Forge / 配布記事シリーズ / 2026-07</p>
+      <h1>LLMに「作らせて、検証する」</h1>
+      <p class="lead">
+        日本語の一文から、検証済みの動くゲームユニットを作る実験機 Voxel Arena Forge の記録です。
+        軽量な言語モデルを現場で運用するために何を作り、何を測り、どこで転んだのかを、
+        実物のコード・ログ・数値と一緒に全6回で書きます。
+      </p>
+      <div class="note">
+        この一式は発表の配布資料で、<b>一般公開はしません</b>(会場・関係者限定)。
+        そのためモデル名・コスト感・内部数値・失敗の内訳まで具体的に書いています。
+      </div>
+    </header>
+
+    <nav class="toc" aria-label="シリーズ目次">
+      <h2>シリーズ目次</h2>
+      <ol>
+        <li><a href="01-taiken.html">文章から、動くゲームユニットが生まれるまで</a> — まず体験から。何が起きるのかを一気通貫で</li>
+        <li><a href="02-genkeibako.html">「原型箱」を先に作る</a> — 軽量LLMに整形済みスクリプトを出させる型の設計(重点)</li>
+        <li><a href="03-yaritori.html">作成ツールとLLMの「やり取り方式」</a> — 質問ゲート・候補カード・検証エラーの自動再試行(重点)</li>
+        <li><a href="04-kensa-keisoku.html">LLMの出力を信用しない、という設計</a> — 受け入れ検査の4層と、25%→10/10の計測記録</li>
+        <li><a href="05-agent-kaihatsu.html">AIエージェントと3週間、700コミット</a> — この実験機自体の作り方と、実際にあった事故</li>
+        <li><a href="06-tenbou.html">で、ゲーム開発のどこから使うか</a> — 導入の条件・順序と、この実験の限界</li>
+      </ol>
+      <p style="margin:14px 0 0; font-size:14px; color:var(--muted);">
+        付録: <a href="appendix-design-boards.html">設計ボード抄 — 見た目と演出をどう決めたか</a>
+      </p>
+    </nav>
+
+    <article>
+      <section>
+        <h2>読み方</h2>
+        <p>
+          時間がなければ第2回と第3回だけ読んでください。この実験の主張
+          —「投資先はモデルではなく、型と検査」— の根拠はこの2本にあります。
+          発表スライドで見た数字の出どころは第4回、開発体制の裏側は第5回です。
+        </p>
+        <div class="metrics">
+          <div class="metric"><strong>10/10</strong><span>軽量モデル単独構成の受け入れ検査(未見のお題でも 10/10)</span></div>
+          <div class="metric"><strong>約1.4万</strong><span>受け入れユニット1体あたりのトークン(構成間でほぼ同一)</span></div>
+          <div class="metric"><strong>25%→100%</strong><span>同じ軽量モデルの合格率推移。変えたのはモデルではなく型</span></div>
+        </div>
+      </section>
+    </article>
+  </main>
+</body>
+</html>

@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "presentation-captures-manifest.v1",
+  "createdAt": "2026-07-08T02:28:44.635Z",
+  "deepSeekApiCalled": false,
+  "simulatorUrl": "http://127.0.0.1:4274/",
+  "outputDir": "F:\\WorkSpace\\VoxelArenaForge\\docs\\presentation\\assets\\videos\\battle",
+  "cameraMode": "showcase",
+  "captureMargin": 0.08,
+  "captureScale": 1,
+  "fps": 24,
+  "clipSeconds": 20,
+  "viewport": {
+    "width": 2560,
+    "height": 1440
+  },
+  "samples": [
+    {
+      "id": "showcase-storm-lancer-phalanx",
+      "labelJa": "【展示】雷槍の突撃",
+      "descriptionJa": "騎乗した雷槍が槍盾隊へ踏み込み、接敵前後の移動と攻撃が読みやすい一戦です。",
+      "simulatorReplayUrl": "http://127.0.0.1:4274/?sampleReplay=showcase-storm-lancer-phalanx&mode=embed&capture=1&camera=showcase&captureMargin=0.08&captureScale=1",
+      "cameraMode": "showcase",
+      "captureMargin": 0.08,
+      "captureScale": 1,
+      "bestFrame": {
+        "timeSeconds": 2.75,
+        "timelineRatio": 0.1786,
+        "renderedUnits": 7,
+        "renderedBoxParts": 140,
+        "renderedCueCount": 0,
+        "camera": {
+          "mode": "showcase",
+          "projection": "perspective",
+          "captureScale": "1.00",
+          "framingBounds": "-4.00,-2.80,4.10,2.80",
+          "viewBounds": "-4.80,-3.40,4.80,3.40",
+          "teamCoverage": "blue:1.00|red:1.00"
+        },
+        "teams": {
+          "separationDistance": 4.26,
+          "separationScore": 1.4494,
+          "overlapPenalty": 0
+        },
+        "canvas": {
+          "width": 2560,
+          "height": 1440,
+          "nonBackgroundPixels": 700212,
+          "nonBackgroundRatio": 0.1899,
+          "contentBounds": {
+            "width": 2560,
+            "height": 1440,
+            "widthRatio": 1,
+            "heightRatio": 1,
+            "areaRatio": 1
+          }
+        }
+      },
+      "frameCount": 480,
+      "fps": 24,
+      "clipSeconds": 20,
+      "still": {
+        "path": "showcase-storm-lancer-phalanx/showcase-storm-lancer-phalanx.png",
+        "sizeBytes": 131994,
+        "sha256": "07f495eb063f8202f84961feca8266b1948a4c936ecb0419c9633b03180e658d"
+      },
+      "clip": {
+        "path": "showcase-storm-lancer-phalanx/showcase-storm-lancer-phalanx.mp4",
+        "sizeBytes": 7691515,
+        "sha256": "2632cfb6c0f7a3febe060eedcca558803267f4af08da2890dd85ce781065e3f4"
+      }
+    }
+  ]
+}

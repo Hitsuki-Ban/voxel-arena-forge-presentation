@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "presentation-flow-video.v1",
+  "createdAt": "2026-07-07T20:21:31.801Z",
+  "deepSeekApiCalled": false,
+  "provider": "mock",
+  "requestTextJa": "HPが高く、前線で味方を守る重装の剣士を作りたいです。",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "video": {
+    "path": "assets/videos/workbench-flow/workbench-flow.mp4",
+    "sizeBytes": 2950160,
+    "sha256": "02b769b33f76d1c5a29a2b24beb34dd1c1717381cea62fede5bd2b8c89af27b4"
+  },
+  "stills": [
+    {
+      "name": "flow-01-request",
+      "labelJa": "依頼を日本語で入力",
+      "path": "assets/videos/workbench-flow/stills/flow-01-request.png",
+      "sizeBytes": 173411,
+      "sha256": "34b9eeffbc091b3a41b6c3a527e32ac9598952ae37545ef75645e999ccfdb3ea"
+    },
+    {
+      "name": "flow-02-choice-cards",
+      "labelJa": "候補カードで方向を選ぶ",
+      "path": "assets/videos/workbench-flow/stills/flow-02-choice-cards.png",
+      "sizeBytes": 144370,
+      "sha256": "ed69ad457b39799301e5793ceabca7f6741ca6b88081d5585c722e1738c2cc9a"
+    },
+    {
+      "name": "flow-03-completed",
+      "labelJa": "完成と対戦結果",
+      "path": "assets/videos/workbench-flow/stills/flow-03-completed.png",
+      "sizeBytes": 160790,
+      "sha256": "87bbe18d5479b64ca382827e590f04ffa866399138c5d14f9100ff5ae6c7d878"
+    },
+    {
+      "name": "flow-04-replay",
+      "labelJa": "対戦リプレイの再生",
+      "path": "assets/videos/workbench-flow/stills/flow-04-replay.png",
+      "sizeBytes": 138816,
+      "sha256": "5f377cd9add39623ebdd0635dc7b392883690329d45957ac2dde697248afe1d2"
+    }
+  ]
+}

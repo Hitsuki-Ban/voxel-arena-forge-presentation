@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>「原型箱」を先に作る — 軽量LLMに整形済みスクリプトを出させる方法</title>
+  <link rel="stylesheet" href="article.css">
+</head>
+<body>
+  <main class="page">
+    <header>
+      <p class="meta">LLMに「作らせて、検証する」 第2回 / <a href="index.html">シリーズ目次</a></p>
+      <h1>「原型箱」を先に作る</h1>
+      <p class="lead">
+        LLM にコードを書かせようとするとき、最初に考えがちなのは「どのモデルを使うか」です。
+        VoxelArenaForge では順番を逆にしました。<b>先に「型」を作り込み、モデルはあとから安いものに差し替えていく</b>。
+        この型の一式を、私たちは「原型箱」と呼んでいます。
+      </p>
+      <div class="note">
+        第1回で紹介した「文章からゲームユニットを作る」体験の裏側で、生成 AI に何を渡しているのかを書きます。
+        シリーズの重点回その1です。
+      </div>
+    </header>
+
+    <article>
+      <section>
+        <h2>原型箱の中身</h2>
+        <p>
+          VoxelArenaForge の生成対象は、ユニットの行動スクリプト(TypeScript)とボクセルモデルの構成です。
+          LLM に渡している「箱」は、大きく4種類あります。
+        </p>
+
+        <h3>1. コマンド API — できることのメニュー</h3>
+        <p>生成スクリプトは、世界の状態を直接いじれません。できるのは <b>16種類の Command を返すことだけ</b>です。少ないので全部書きます:</p>
+        <ul>
+          <li>装備・移動: <code>equip</code> / <code>mount</code> / <code>attachAura</code> / <code>moveToward</code> / <code>faceTarget</code></li>
+          <li>攻撃: <code>meleeArc</code> / <code>areaDamage</code></li>
+          <li>妨害・支援: <code>areaPull</code> / <code>areaSlow</code> / <code>applyStatus</code> / <code>areaStatus</code> / <code>applySelfStatus</code> / <code>imbueSelf</code></li>
+          <li>演出・管理: <code>playAttributeVfx</code> / <code>playVfx</code> / <code>startCooldown</code></li>
+        </ul>
+        <p>
+          引数も型で固定です。たとえば <code>areaDamage</code> は
+          <code>{ center, radius, damage, damageType, maxTargets?, falloff?: 'none' | 'linear', vfx? }</code>
+          — <code>falloff</code> に数値を書くと型検査で弾かれます。
+        </p>
+        <p>
+          見える情報(<code>ActionContext</code>)も同じ思想で絞ってあります。
+          自分の位置と HP 比率(<code>self</code>)、AI テンプレートが決めた攻撃対象・目標地点(<code>intent</code>)、
+          <code>attack</code> と <code>moveSpeed</code> の2つの能力値(<code>scalars</code>)、
+          <code>cooldowns.ready(id)</code>、シード付き乱数(<code>rng.next()</code>)— これで全部です。
+          <b>敵の一覧も、HP の生値も、座標系の詳細も渡しません</b>。
+        </p>
+        <p>
+          つまり LLM への依頼は「自由にコードを書いて」ではなく、「<b>このメニューから技を組み合わせて</b>」になります。
+          書ける範囲と見える範囲が狭いほど、出力は型に沿い、検証も簡単になります。
+        </p>
+
+        <h3>2. スキーマ — データの通り道</h3>
+        <p>
+          ユニット仕様、生成パッケージ、対戦ログなど、システムを流れるデータはすべてスキーマ(23ファイル)で定義され、
+          <b>検証を通らないデータはそもそも次の工程に進めません</b>。属性は8種、状態異常は11種と列挙型で固定。
+          LLM が「それっぽい何か」を発明する余地を削っています。
+        </p>
+
+        <h3>3. 素材カタログ — 存在するものしか使えない</h3>
+        <p>
+          ボクセルプリミティブ12種、3Dアセット43種(体・武器・騎乗・VFX)。
+          生成コードが参照できるのはカタログに実在する ID だけで、存在しないエフェクト名を書くと受け入れ検査で弾かれます。
+          行動の骨格も、7種の AI テンプレート(Brawler / Kiter / Artillery / Diver / Support / Summoner / Boss)から選ぶ方式です。
+        </p>
+
+        <h3>4. 参照ドキュメント — 動く実例と、失敗の記録</h3>
+        <p>生成プロンプトには6本の参照文書が同梱されます。その中で特に効いたのが次の2本でした。</p>
+        <ul>
+          <li><b>working-heavy-swordsman-example</b> — 検証を通った実物のスクリプトを丸ごと渡す。「良い出力の説明」より「良い出力そのもの」の方がずっと効きます。</li>
+          <li><b>known-failure-patterns</b> — 過去に検証で弾かれた失敗パターン集。失敗が発生するたびにここへ蓄積され、次の生成プロンプトに反映されます。<b>失敗が資産になる</b>設計です。</li>
+        </ul>
+        <div class="callout">
+          <strong>腐らないドキュメント。</strong>
+          この参照パックはリビジョンとハッシュで管理され、記載内容が現在のリポジトリの実体(コマンド定義・カタログ)と
+          一致するかを<b>テストが毎回機械検証します</b>。コードを変えたのにドキュメントを直し忘れると、CI が落ちます。
+          人間のドキュメントが腐る問題を、契約として解決しています。
+        </div>
+      </section>
+
+      <section>
+        <h2>で、モデルはどこまで安くできたか</h2>
+        <p>原型箱を作り込んだ結果を、実測の数字で書きます(受け入れ率=生成物が全自動検査を通ってライブラリ登録まで到達した割合です)。</p>
+        <ul>
+          <li>仕様相談(仕様相談 AI)は<b>軽量級の deepseek-v4-flash で成立</b>しています。</li>
+          <li>コード生成を中量級(pro)にした構成は、調整済みの表示用10件で <b>10/10</b>(初回成功率 1.0)、調整に使っていない未見の holdout 10件でも <b>9〜10/10</b>。</li>
+          <li>そして本題の、<b>コード生成まで flash にした軽量単独構成</b>。原型箱が未成熟だった初期の計測では <b>25%</b> でした。それが型の成熟した現在は、表示用10件で <b>10/10</b>(初回成功率 0.9)、未見の holdout 10件でも <b>10/10</b>(初回成功率 1.0)です。</li>
+          <li>履歴全体では 1,360 回の生成試行で受け入れ率 75.7%。これは調整前の失敗も全部含んだ数字で、175本の評価レポートから改善の推移がそのまま追えます。</li>
+          <li>コストの実測も付けておきます。受け入れ1体あたり flash 単独で<b>約14,100トークン</b>(入力11,600/出力2,600)、pro 構成で約13,600トークン。<b>トークン量は構成でほぼ変わらない</b>ので、コスト差は純粋にモデル単価の差です。</li>
+        </ul>
+        <div class="metrics">
+          <div class="metric"><strong>25% → 10/10</strong><span>同じ軽量モデルの受け入れ率。モデルは一度も変わっていない</span></div>
+          <div class="metric"><strong>10/10</strong><span>未見の holdout でも通過(初回成功率 1.0)</span></div>
+          <div class="metric"><strong>約1.4万</strong><span>受け入れ1体あたりのトークン。構成間の差は4%未満</span></div>
+        </div>
+        <p>
+          同じ軽量モデルが 25% から 10/10 になるまでの間に、モデルは一度も変わっていません。変わったのは<b>型と失敗パターン集</b>です。
+          そしてこの実験を安心して回せた理由も型の側にあります。flash の出力が暴れても、受け入れ検査が全部止めてくれる。
+          <b>壊れたものは一切通らないので、「モデルをどこまで安くできるか」が完全にノーリスクな実験になる</b>
+          — これがこの記事で一番言いたいことです。
+        </p>
+        <div class="warn">
+          正直に書くと、順序を間違えた時期もありました。初期に重量級(pro/pro)構成で回した本番スモークは惨憺たる結果で、
+          モデルを重くしても解決しませんでした。数字が動き始めたのは、known-failure-patterns と working example を整備してからです。
+          <b>モデルの賢さは、型の不備を埋めてくれませんでした</b>。
+        </div>
+      </section>
+
+      <section>
+        <h2>スクリプトのかたち — 「頭脳」と「技の中身」の2層</h2>
+        <p>
+          実物のコードを見せる前に、その「かたち」を説明させてください。プログラムに馴染みがなくても、ここさえ分かれば読めます。
+        </p>
+        <p>まず大事な前提として、ユニットの動きは<b>2つの層</b>に分かれています。</p>
+        <ol class="step-list">
+          <li>
+            <b>ユニット AI(頭脳)— 生成しません。</b>
+            「いつ動くか」「誰を狙うか」「今どの行動を出すか」を毎瞬決める層です。
+            これは素材カタログの項で触れた<b>7種の既製テンプレート</b>(接近して殴る Brawler、距離を取って撃つ Kiter、
+            後方から砲撃する Artillery…)から選ぶだけで、中身はエンジン側の検証済みの部品です。
+          </li>
+          <li>
+            <b>行動の指示書(スクリプト)— こちらを生成します。</b>
+            頭脳が「今スキル1を使う」と決めた瞬間に呼び出され、<b>その技が具体的に何をするか</b>を答える層です。
+            LLM が書くのはこの指示書だけです。
+          </li>
+        </ol>
+        <p>
+          この分業は原型箱の思想そのものです。戦い方の頭脳を既製品にしておけば、
+          生成がどれだけ暴れても「棒立ちになる」「戦場を迷走する」といった壊れ方は構造的に起きません。
+          <b>生成の自由度を「技の中身」に閉じ込めている</b>わけです。
+        </p>
+        <p>
+          その指示書は、<b>場面ごとに10枚</b>あります。
+          出撃したとき(<code>init</code>)、移動の表現(<code>move</code>)、向きの表現(<code>turn</code>)、
+          通常攻撃・強攻撃のとき(<code>basicAttack</code> / <code>heavyAttack</code>)、スキルを使うとき(<code>skill1</code> / <code>skill2</code>)、
+          攻撃を受けたとき(<code>onHit</code>)、転倒したとき(<code>onKnockdown</code>)、倒れたとき(<code>onDeath</code>)。
+          舞台の台本にたとえるなら、頭脳が「次はこの場面」とページを指定し、指示書がそのページの中身を書いている関係です。
+        </p>
+        <p>どのページも、書いてあることは同じ構造です。</p>
+        <ol class="step-list">
+          <li><b>状況メモ(ctx)を受け取る。</b>自分の位置とHP割合、頭脳が決めた攻撃対象、「スキルはもう使えるか」など、いま見えている情報のメモです。</li>
+          <li><b>命令カードを数枚選んで返す。</b>先に書いた16種のメニュー(範囲減速、クールダウン開始…)から選ぶだけ。</li>
+          <li><b>実行はシミュレーターがやる。</b>指示書自身は世界に指一本触れられません。返した命令が正しいかどうかも、実行前に検査されます。</li>
+        </ol>
+        <p>
+          つまりこれから見るコードは「プログラム」というより、<b>様式の決まった記入用紙</b>に近いものです。
+          <code>skill1: …</code> は「スキルを使うときの指示書」、<code>return [...]</code> は「返す命令カードの束」— この2つだけ押さえてください。
+        </p>
+      </section>
+
+      <section>
+        <h2>実際に出てきたものを見る</h2>
+        <p>
+          数字だけだと実感が湧かないと思うので、実物を貼ります。調整に使っていない holdout スイートの依頼文
+          「鎖付きの槍を操る騎兵ユニットを作ってください。騎乗感、長柄武器、鎖で距離を支配する動きを見せてください。」に対して、
+          軽量モデル(flash)が<b>初回一発で</b>出したコードです(無修正の抜粋)。
+        </p>
+        <div class="code-window">
+          <div class="code-toolbar"><span class="code-badge">script.ts</span><span>flash が初回一発で生成(無修正・抜粋)</span></div>
+          <pre><code><span class="tok-kw">export const</span> unitScript: UnitScriptV1 = {
+  version: <span class="tok-num">1</span>,
+  init: () =&gt; [
+    commands.equip(<span class="tok-str">'chain_snare_tool'</span>),
+    commands.equip(<span class="tok-str">'rider_lance_polearm'</span>),
+    commands.mount(<span class="tok-str">'void_horse'</span>)
+  ],
+  <span class="tok-cm">// …move / turn / basicAttack 略…</span>
+  skill1: (ctx: ActionContext) =&gt; {
+    <span class="tok-kw">if</span> (!ctx.cooldowns.ready(<span class="tok-str">'skill1'</span>)) <span class="tok-kw">return</span> [];
+    <span class="tok-kw">const</span> output: Command[] = [
+      ctx.commands.areaSlow({
+        center: ctx.intent.targetPosition ?? ctx.self.position,
+        radius: <span class="tok-num">4</span>,
+        slowRatio: <span class="tok-num">0.5</span>,
+        duration: <span class="tok-num">2</span>,
+        vfx: <span class="tok-str">'chain_tether_spark'</span>
+      }),
+      ctx.commands.startCooldown(<span class="tok-str">'skill1'</span>, <span class="tok-num">7</span>)
+    ];
+    <span class="tok-kw">return</span> output;
+  },
+  <span class="tok-cm">// …skill2 / onHit / onKnockdown / onDeath 略…</span>
+};</code></pre>
+        </div>
+        <p>
+          前章の読み方で追うと: <code>init</code>(出撃したときの指示書)では鎖・槍を装備して馬に乗り、
+          <code>skill1</code>(スキルの指示書)では「まだ使えないなら何もしない(<code>ready</code> の確認)」→
+          「範囲減速の命令と、クールダウン開始の命令をカード2枚として返す」— それだけです。
+        </p>
+        <p>
+          見てほしいのはコードの賢さではなく、<b>語彙の狭さ</b>です。
+          <code>equip / mount</code> の ID は全部アセット台帳の実在 ID(<code>chain_snare_tool</code>、<code>void_horse</code>)。
+          <code>areaSlow</code> の引数は型どおり。クールダウンは <code>ready()</code> を確認してから <code>startCooldown</code> で開始。
+          flash 級のモデルにこれが書けるのは、書ける範囲をここまで絞ってあるからです。
+        </p>
+        <p>1回の生成で出てくるのは、このスクリプトを含めて5ファイルです。</p>
+        <ul>
+          <li><code>script.ts</code> — 行動スクリプト(上の実物)</li>
+          <li><code>manifest.json</code> — アクション定義。射程・クールダウン・対象選択・効果範囲の予算(このユニットの skill1 なら <code>range 4 / cooldown 7 / targeting "position" / budgets { maxRadius: 4, maxTargets: 3 }</code>)</li>
+          <li><code>composition.json</code> — ボクセルの見た目構成(体・槍・騎乗)</li>
+          <li><code>tests.generated.ts</code> — 生成物自身の形状テスト</li>
+          <li><code>brief.ja.md</code> — 日本語の設計解説</li>
+        </ul>
+        <p>
+          対戦後には <code>balance-report</code> が付きます。このユニットなら平均 DPS 198.6、平均生存 17.0 秒
+          — <b>「なんか強そう」ではなく数値で残る</b>ので、バランス調整の入力にそのまま使えます。
+        </p>
+      </section>
+
+      <section>
+        <h2>ゲーム開発現場への翻訳</h2>
+        <p>「原型箱」と呼んでいるものは、ゲーム開発の現場ならすでに持っているもので作れるはずです。</p>
+        <table class="plain-table">
+          <tr><th>この実験での型</th><th>現場での対応物</th></tr>
+          <tr><td>コマンド API(16種)</td><td>スキルやアクションの<b>社内 API・コマンド定義</b></td></tr>
+          <tr><td>スキーマ(23本)</td><td><b>マスタデータのスキーマ</b>、エディタの入力規則</td></tr>
+          <tr><td>素材カタログ(43点)</td><td><b>アセット管理台帳</b>、エフェクト・モーションの ID 一覧</td></tr>
+          <tr><td>参照ドキュメント(6本)</td><td><b>通った実データのサンプル</b>と、レビューで弾いた理由の記録</td></tr>
+        </table>
+        <p>
+          新しく作るものより、「すでにあるものを LLM が読める契約に固め直す」作業が中心です。
+          そして型が固まった瞬間から、高いモデルを安いモデルに差し替える実験が、数字付きで安全にできるようになります。
+        </p>
+        <p>次回は、この箱を使う側の話 — 作成ツールと LLM の「やり取り方式」(質問ゲート、候補カード、検証エラーの再試行フィードバック)を書きます。</p>
+      </section>
+    </article>
+
+    <footer class="series-nav">
+      <span><a href="01-taiken.html">← 第1回: 体験編</a></span>
+      <span><a href="03-yaritori.html">第3回: やり取り方式 →</a></span>
+    </footer>
+  </main>
+</body>
+</html>
